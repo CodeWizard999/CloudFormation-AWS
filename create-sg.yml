@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create a Security Group for SSH and HTTP access.
+
+Parameters:
+  SSHPort:
+    Type: Number
+    Default: 22
+    Description: Port for SSH access
+  HTTPPort:
+    Type: Number
+    Default: 80
+    Description: Port for HTTP access
+  PublicCidr:
+    Type: String
+    Default: "0.0.0.0/0"
+    Description: CIDR range for public access
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH and HTTP access
+      VpcId: !ImportValue VPCId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref SSHPort
+          ToPort: !Ref SSHPort
+          CidrIp: !Ref PublicCidr
+        - IpProtocol: tcp
+          FromPort: !Ref HTTPPort
+          ToPort: !Ref HTTPPort
+          CidrIp: !Ref PublicCidr
+
+Outputs:
+  SecurityGroupId:
+    Value: !Ref SecurityGroup
+    Export:
+      Name: SecurityGroupId
+

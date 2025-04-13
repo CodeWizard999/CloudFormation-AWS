@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Create two EC2 instances, each with a dynamically chosen subnet (public or private).
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: EC2 instance type
+
+  Instance1Subnet:
+    Type: String
+    AllowedValues:
+      - public
+      - private
+    Default: public
+    Description: Choose the subnet for Instance 1 (public or private)
+
+  KeyName:
+    Type: String
+    Default: My_Key
+    AllowedValues:
+      - My_Key
+      - vockey
+    Description: The SSH key name to access EC2 instances.
+
+  AMIId:
+    Type: String
+    AllowedValues:
+      - ami-0453ec754f44f9a4a  # Amazon Linux 2023
+      - ami-0166fe664262f664c  # Amazon Linux 2
+    Default: ami-0453ec754f44f9a4a
+    Description: Choose the AMI for EC2 instances.
+
+Conditions:
+  IsInstance1Public: !Equals [!Ref Instance1Subnet, "public"]
+  IsInstance1Private: !Equals [!Ref Instance1Subnet, "private"]
+
+Resources:
+  Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      SubnetId: !If [IsInstance1Public, !ImportValue PublicSubnetId, !ImportValue PrivateSubnetId]
+      SecurityGroupIds:
+        - !ImportValue SecurityGroupId
+      ImageId: !Ref AMIId
+      KeyName: !Ref KeyName
+      Tags:
+        - Key: Name
+          Value: Instance1
+
+  Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      SubnetId: !If [IsInstance1Public, !ImportValue PrivateSubnetId, !ImportValue PublicSubnetId]
+      SecurityGroupIds:
+        - !ImportValue SecurityGroupId
+      ImageId: !Ref AMIId
+      KeyName: !Ref KeyName
+      Tags:
+        - Key: Name
+          Value: Instance2
+
+Outputs:
+  Instance1Id:
+    Description: The ID of the first EC2 instance
+    Value: !Ref Instance1
+    Export:
+      Name: Instance1Id
+
+  Instance2Id:
+    Description: The ID of the second EC2 instance
+    Value: !Ref Instance2
+    Export:
+      Name: Instance2Id
+
